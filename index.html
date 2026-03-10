@@ -79,7 +79,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 #last-upd{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--t3)}
 
 /* KPI */
-#kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+#kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.6}
 .kpi-label{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
@@ -119,34 +119,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 
 #footer{position:fixed;bottom:14px;right:18px;font-family:var(--mono);font-size:10px;color:var(--t3);opacity:.4}
 
-/* METHODOLOGY BOX */
-#method-box{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:20px 24px;margin-top:12px}
-.method-title{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--t2);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1)}
-.method-icon{width:24px;height:24px;background:var(--teal-a);border:1px solid rgba(0,212,170,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:13px;font-family:serif;flex-shrink:0}
-.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
-.method-item{background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:12px 14px}
-.method-name{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
-.method-formula{font-family:var(--mono);font-size:11px;color:var(--t1);background:rgba(255,255,255,.03);border-radius:3px;padding:4px 8px;margin-bottom:6px;letter-spacing:.5px}
-.method-desc{font-size:11px;color:var(--t3);line-height:1.6}
-.method-footer{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3);padding-top:12px;border-top:1px solid var(--b1)}
-@media(max-width:900px){.method-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.method-grid{grid-template-columns:1fr}}
-
 @media(max-width:900px){#kpi-grid{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr}.range-btns{display:none}}
-/* METHODOLOGY */
-#methodology{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:12px}
-.meth-hdr{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
-.meth-hdr:hover .chart-title{color:var(--teal)}
-.meth-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.meth-card{background:var(--card2,#0d1524);border:1px solid var(--b1);border-radius:6px;padding:14px}
-.meth-title{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:10px}
-.meth-formula{font-family:var(--mono);font-size:11px;color:var(--teal);background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.15);border-radius:4px;padding:6px 10px;margin-bottom:8px;line-height:1.7}
-.meth-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid rgba(26,39,68,.5);font-family:var(--mono);font-size:11px}
-.meth-row:last-child{border-bottom:none}
-.meth-k{color:var(--t3);white-space:nowrap;flex-shrink:0}
-.meth-v{color:var(--t2);text-align:right;word-break:break-all}
-@media(max-width:900px){.meth-grid{grid-template-columns:1fr}}
-
 </style>
 </head>
 <body>
@@ -188,7 +161,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
   <div id="empty">
     <div class="empty-logo">VOLTERM</div>
     <div class="empty-hint">输入股票代码 → ANALYZE</div>
-    <div class="empty-sub">Yahoo Finance 真实数据 · A股 / 港股</div>
+    <div class="empty-sub">Yahoo Finance 真实数据 · A股 / 港股 · 需在本地浏览器打开</div>
   </div>
 
   <div id="dashboard" style="display:none">
@@ -201,60 +174,32 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     </div>
 
     <div id="kpi-grid">
-
-      <!-- 最新收盘价 -->
-      <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal);opacity:.6"></div>
+      <div class="kpi" style="--c:var(--teal)">
+        <div class="kpi::before" style="background:var(--teal)"></div>
         <div class="kpi-label">最新收盘价</div>
-          </div>
         <div class="kpi-val" id="kpi-price" style="color:var(--teal)">--</div>
         <div class="kpi-sub" id="kpi-chg">--</div>
       </div>
-
-      <!-- 短期HV -->
       <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--amber);opacity:.6"></div>
         <div class="kpi-label" id="kpi-hv20-lbl">短期HV (20日)</div>
-          </div>
         <div class="kpi-val" id="kpi-hv20" style="color:var(--amber)">--</div>
         <div class="kpi-sub">年化历史波动率</div>
       </div>
-
-      <!-- 中期HV -->
       <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange);opacity:.6"></div>
         <div class="kpi-label">中期HV (60日)</div>
-          </div>
         <div class="kpi-val" id="kpi-hv60" style="color:var(--orange)">--</div>
         <div class="kpi-sub">年化历史波动率</div>
       </div>
-
-      <!-- Beta -->
       <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:.6"></div>
         <div class="kpi-label">Beta 系数</div>
-          </div>
         <div class="kpi-val" id="kpi-beta" style="color:var(--blue)">--</div>
-        <div class="kpi-sub" id="kpi-beta-sub">相对大盘 · 60日滚动</div>
+        <div class="kpi-sub" id="kpi-beta-sub">相对大盘</div>
       </div>
-
-      <!-- 分位数 -->
       <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--purple);opacity:.6"></div>
         <div class="kpi-label">波动率分位数</div>
-          </div>
         <div class="kpi-val" id="kpi-pct" style="color:var(--purple)">--</div>
         <div class="kpi-sub" id="kpi-badge">--</div>
       </div>
-
-      <!-- IV 估算 -->
-      <div class="kpi">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#e879f9;opacity:.6"></div>
-        <div class="kpi-label">IV 估算</div>
-        <div class="kpi-val" id="kpi-iv" style="color:#e879f9">--</div>
-        <div class="kpi-sub" id="kpi-iv-sub">隐含波动率近似</div>
-      </div>
-
     </div>
 
     <div class="chart-card fu">
@@ -290,152 +235,15 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       </div>
     </div>
 
-
-    <!-- 计算口径说明 -->
-    <div id="methodology" class="fu" style="margin-top:12px">
-      <div class="meth-hdr" onclick="toggleMeth()">
-        <span class="chart-title" style="cursor:pointer">
-          ▾ <span id="meth-toggle-text">计算口径说明</span>
-        </span>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">数据来源 · 计算逻辑 · 指标定义</span>
-      </div>
-      <div id="meth-body" style="display:block;margin-top:14px">
-        <div class="meth-grid">
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--teal)">📥 数据来源</div>
-            <div class="meth-row"><span class="meth-k">行情数据</span><span class="meth-v">Yahoo Finance v8 API</span></div>
-            <div class="meth-row"><span class="meth-k">接口</span><span class="meth-v">query1.finance.yahoo.com/v8/finance/chart</span></div>
-            <div class="meth-row"><span class="meth-k">频率</span><span class="meth-v">日线（interval=1d）</span></div>
-            <div class="meth-row"><span class="meth-k">价格</span><span class="meth-v">前复权收盘价（adjusted close）</span></div>
-            <div class="meth-row"><span class="meth-k">A股基准</span><span class="meth-v">上证综指 000001.SS</span></div>
-            <div class="meth-row"><span class="meth-k">港股基准</span><span class="meth-v">恒生指数 ^HSI</span></div>
-            <div class="meth-row"><span class="meth-k">代理</span><span class="meth-v">Vercel 服务端转发（无 CORS 限制）</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--amber)">📐 历史波动率 HV</div>
-            <div class="meth-formula">rᵢ = ln(Pᵢ / Pᵢ₋₁)</div>
-            <div class="meth-formula">σ = √[ Σ(rᵢ − r̄)² / (N−1) ] × √252 × 100%</div>
-            <div class="meth-row"><span class="meth-k">收益率</span><span class="meth-v">对数收益率（Log Return）</span></div>
-            <div class="meth-row"><span class="meth-k">标准差</span><span class="meth-v">样本标准差（除以 N−1）</span></div>
-            <div class="meth-row"><span class="meth-k">年化因子</span><span class="meth-v">√252（A股交易日约252天）</span></div>
-            <div class="meth-row"><span class="meth-k">短期窗口</span><span class="meth-v">可选 10 / 20 / 30 交易日</span></div>
-            <div class="meth-row"><span class="meth-k">中期窗口</span><span class="meth-v">固定 60 交易日（约3个月）</span></div>
-            <div class="meth-row"><span class="meth-k">计算方式</span><span class="meth-v">滚动窗口，逐日更新</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--blue)">📊 Beta 系数</div>
-            <div class="meth-formula">β = Cov(rₛ, rₘ) / Var(rₘ)</div>
-            <div class="meth-row"><span class="meth-k">窗口</span><span class="meth-v">滚动 60 交易日</span></div>
-            <div class="meth-row"><span class="meth-k">rₛ</span><span class="meth-v">个股日对数收益率</span></div>
-            <div class="meth-row"><span class="meth-k">rₘ</span><span class="meth-v">基准指数日对数收益率</span></div>
-            <div class="meth-row"><span class="meth-k">β &gt; 1</span><span class="meth-v">波动幅度大于大盘</span></div>
-            <div class="meth-row"><span class="meth-k">β = 1</span><span class="meth-v">与大盘同步</span></div>
-            <div class="meth-row"><span class="meth-k">β &lt; 0</span><span class="meth-v">与大盘反向运动</span></div>
-            <div class="meth-row"><span class="meth-k">数据不足</span><span class="meth-v">历史 &lt; 60 日时显示 N/A</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--purple)">📈 波动率分位数</div>
-            <div class="meth-formula">Pct = #{HVᵢ ≤ HV_now} / #{全序列} × 100%</div>
-            <div class="meth-row"><span class="meth-k">基准序列</span><span class="meth-v">所选时间范围内全部短期HV值</span></div>
-            <div class="meth-row"><span class="meth-k">含义</span><span class="meth-v">当前HV在历史中所处百分位</span></div>
-            <div class="meth-row"><span class="meth-k">&lt; 25%</span><span class="meth-v" style="color:#22c55e">低波动</span></div>
-            <div class="meth-row"><span class="meth-k">25–50%</span><span class="meth-v" style="color:#f59e0b">中等波动</span></div>
-            <div class="meth-row"><span class="meth-k">50–75%</span><span class="meth-v" style="color:#f97316">高波动</span></div>
-            <div class="meth-row"><span class="meth-k">&gt; 75%</span><span class="meth-v" style="color:#ef4444">极高波动</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--orange)">📉 HV 分布直方图</div>
-            <div class="meth-row"><span class="meth-k">数据</span><span class="meth-v">全时间范围内所有短期HV值</span></div>
-            <div class="meth-row"><span class="meth-k">分箱数</span><span class="meth-v">16 个等宽区间</span></div>
-            <div class="meth-row"><span class="meth-k">颜色</span><span class="meth-v">对应波动率分位区间着色</span></div>
-            <div class="meth-row"><span class="meth-k">用途</span><span class="meth-v">直观展示波动率分布形态</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:#e879f9">🔮 IV 隐含波动率估算</div>
-            <div class="meth-formula">IV ≈ HV × (1 + VRP)</div>
-            <div class="meth-row"><span class="meth-k">VRP</span><span class="meth-v">波动率风险溢价（Volatility Risk Premium）</span></div>
-            <div class="meth-row"><span class="meth-k">VRP 范围</span><span class="meth-v">10%~35%，随历史分位数动态调整</span></div>
-            <div class="meth-row"><span class="meth-k">逻辑</span><span class="meth-v">市场对未来波动率定价通常高于历史实现值，高分位时溢价更大</span></div>
-            <div class="meth-row"><span class="meth-k">局限性</span><span class="meth-v">A股/港股无公开期权链数据，无法计算真实 IV，此为近似估算</span></div>
-            <div class="meth-row"><span class="meth-k">参考</span><span class="meth-v">真实 IV 需通过期权隐含价格用 Black-Scholes 反推</span></div>
-          </div>
-
-          <div class="meth-card">
-            <div class="meth-title" style="color:var(--t2)">⚠️ 免责声明</div>
-            <div class="meth-row"><span class="meth-k">数据延迟</span><span class="meth-v">Yahoo Finance 非实时，通常延迟15分钟</span></div>
-            <div class="meth-row"><span class="meth-k">用途</span><span class="meth-v">仅供学习研究，不构成投资建议</span></div>
-            <div class="meth-row"><span class="meth-k">版本</span><span class="meth-v">VOLTERM v9.1</span></div>
-            <div class="meth-row"><span class="meth-k">生成时间</span><span class="meth-v">2026-03-10 16:01</span></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
     <div id="risk-box" class="fu">
       <div class="risk-en" id="risk-en">--</div>
       <div class="risk-txt" id="risk-txt">--</div>
       <div class="risk-metrics" id="risk-metrics"></div>
     </div>
-
-    <!-- 指标计算口径说明 -->
-    <div id="method-box" class="fu">
-      <div class="method-title">
-        <span class="method-icon">∑</span>
-        指标计算口径 · METHODOLOGY
-      </div>
-      <div class="method-grid">
-        <div class="method-item">
-          <div class="method-name" style="color:var(--amber)">历史波动率 HV</div>
-          <div class="method-formula">σ = √( Σ(rᵢ - r̄)² / (n-1) × 252 ) × 100%</div>
-          <div class="method-desc">rᵢ = ln(Pᵢ/Pᵢ₋₁) 对数日收益率，滚动窗口计算，年化因子 252 个交易日</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:var(--blue)">Beta 系数</div>
-          <div class="method-formula">β = Cov(rₛ, rₘ) / Var(rₘ)</div>
-          <div class="method-desc">60日滚动窗口，rₛ 为个股对数收益率，rₘ 为基准指数（A股：上证综指 000001.SS，港股：恒生指数 ^HSI）</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:var(--purple)">波动率分位数</div>
-          <div class="method-formula">Pct = rank(HVₜ) / N × 100%</div>
-          <div class="method-desc">当前短期HV在全历史HV序列中的百分位排名，反映当前波动率的相对高低水平</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:var(--teal)">风险等级划分</div>
-          <div class="method-formula">分位 &lt;25% / 25-50% / 50-75% / &gt;75%</div>
-          <div class="method-desc">低波动（绿）/ 中等波动（黄）/ 高波动（橙）/ 极高波动（红），基于历史分位数四分位划分</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:#e879f9">IV 隐含波动率估算</div>
-          <div class="method-formula">IV ≈ HV_短期 × (1 + VRP)，VRP ∈ [10%, 35%]</div>
-          <div class="method-desc">A股/港股无公开期权链，无法直接获取真实 IV。本工具采用 HV × 波动率风险溢价近似：低分位时 VRP≈10%，极高分位时 VRP≈35%，动态调整。真实 IV 需通过 Black-Scholes 模型对期权价格反推。</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:var(--t2)">数据来源</div>
-          <div class="method-formula">Yahoo Finance API（日线收盘价）</div>
-          <div class="method-desc">前复权收盘价，剔除停牌/空值日期，仅含正常交易日数据。数据延迟约15-20分钟</div>
-        </div>
-        <div class="method-item">
-          <div class="method-name" style="color:var(--t2)">免责声明</div>
-          <div class="method-formula">仅供学习与研究参考</div>
-          <div class="method-desc">本工具所展示数据及计算结果不构成任何投资建议，投资者需自行判断并承担相应风险</div>
-        </div>
-      </div>
-      <div class="method-footer">
-        <span>构建时间 · BUILD TIME：2026-03-11 00:00 CST</span>
-        <span>VOLTERM v9.1 · by Claude</span>
-      </div>
-    </div>
   </div>
 </div>
 
-<div id="footer">VOLTERM v9.1 · Yahoo Finance · 生成于 2026-03-10 16:01 · 仅供参考</div>
+<div id="footer">VOLTERM v9.0 · Yahoo Finance · 仅供参考</div>
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -640,16 +448,6 @@ async function analyze() {
     const curHV20 = v20.at(-1), curHV60 = v60.at(-1);
     const curBeta = betaArr.filter(Boolean).at(-1) ?? null;
     const pct = calcPct(v20), risk = riskInfo(pct);
-
-    // IV 估算：基于 HV + 波动率风险溢价（VRP）模型
-    // 市场通常对波动率定价存在溢价，IV ≈ HV × (1 + VRP)
-    // VRP 根据历史分位数动态调整：低分位溢价小，高分位溢价大
-    function calcIV(hv, pctile) {
-      if (!hv) return null;
-      const vrp = 0.10 + (pctile / 100) * 0.25; // VRP range: 10%~35%
-      return +(hv * (1 + vrp)).toFixed(2);
-    }
-    const curIV = calcIV(curHV20, pct);
     const last = stock.closes.at(-1), prev = stock.closes.at(-2) ?? last;
     const chg = ((last-prev)/prev*100).toFixed(2);
 
@@ -672,10 +470,6 @@ async function analyze() {
     document.getElementById('kpi-beta').textContent = curBeta ? curBeta : 'N/A';
     document.getElementById('kpi-beta-sub').textContent = curBeta ? (Math.abs(curBeta)>1.2?'高相关':'中性相关') : '需60日+';
     document.getElementById('kpi-pct').textContent = pct + '%';
-    document.getElementById('kpi-iv').textContent = curIV ? curIV + '%' : '--';
-    document.getElementById('kpi-iv-sub').textContent = curIV
-      ? `HV×(1+VRP)  VRP≈${((curIV/curHV20-1)*100).toFixed(0)}%`
-      : '需要HV数据';
     document.getElementById('kpi-badge').innerHTML =
       `<span class="badge" style="background:${risk.color}22;color:${risk.color}">${risk.label}</span>`;
     document.getElementById('hv20-leg').textContent = `${win}日HV`;
@@ -793,15 +587,6 @@ async function analyze() {
   } finally {
     showLoading(false);
   }
-}
-
-
-function toggleMeth() {
-  const body = document.getElementById('meth-body');
-  const txt  = document.getElementById('meth-toggle-text');
-  const open = body.style.display === 'none';
-  body.style.display = open ? 'block' : 'none';
-  txt.textContent = open ? '收起计算口径说明 ▴' : '展开计算口径说明 ▸';
 }
 
 // Enter key
