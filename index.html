@@ -87,6 +87,19 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .kpi-sub{font-family:var(--mono);font-size:11px;color:var(--t3)}
 .badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600}
 
+/* KPI info tooltip */
+.kpi-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.kpi-hdr .kpi-label{margin-bottom:0}
+.info-wrap{position:relative;display:inline-flex;align-items:center}
+.info-icon{width:15px;height:15px;border-radius:50%;border:1px solid var(--t3);color:var(--t3);font-size:9px;font-family:var(--mono);display:flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0;transition:.15s;user-select:none;line-height:1}
+.info-icon:hover{border-color:var(--teal);color:var(--teal)}
+.info-tip{display:none;position:absolute;top:calc(100% + 8px);right:0;width:240px;background:rgba(6,10,22,.97);border:1px solid var(--b2);border-radius:6px;padding:11px 13px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.info-tip::before{content:'';position:absolute;top:-5px;right:5px;width:8px;height:8px;background:rgba(6,10,22,.97);border-left:1px solid var(--b2);border-top:1px solid var(--b2);transform:rotate(45deg)}
+.info-wrap:hover .info-tip{display:block}
+.info-tip-title{font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;font-weight:600}
+.info-tip-formula{font-family:var(--mono);font-size:11px;color:#e2e8f0;background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.15);border-radius:4px;padding:6px 8px;margin-bottom:7px;line-height:1.6}
+.info-tip-desc{font-size:11px;color:var(--t2);line-height:1.6;font-family:var(--sans)}
+
 /* CHARTS */
 .chart-card{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:12px}
 .chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -118,6 +131,19 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .empty-sub{font-family:var(--mono);font-size:11px;color:#1a2d40}
 
 #footer{position:fixed;bottom:14px;right:18px;font-family:var(--mono);font-size:10px;color:var(--t3);opacity:.4}
+
+/* METHODOLOGY BOX */
+#method-box{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:20px 24px;margin-top:12px}
+.method-title{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--t2);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1)}
+.method-icon{width:24px;height:24px;background:var(--teal-a);border:1px solid rgba(0,212,170,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:13px;font-family:serif;flex-shrink:0}
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.method-item{background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:12px 14px}
+.method-name{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
+.method-formula{font-family:var(--mono);font-size:11px;color:var(--t1);background:rgba(255,255,255,.03);border-radius:3px;padding:4px 8px;margin-bottom:6px;letter-spacing:.5px}
+.method-desc{font-size:11px;color:var(--t3);line-height:1.6}
+.method-footer{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3);padding-top:12px;border-top:1px solid var(--b1)}
+@media(max-width:900px){.method-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.method-grid{grid-template-columns:1fr}}
 
 @media(max-width:900px){#kpi-grid{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr}.range-btns{display:none}}
 </style>
@@ -174,32 +200,97 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
     </div>
 
     <div id="kpi-grid">
-      <div class="kpi" style="--c:var(--teal)">
-        <div class="kpi::before" style="background:var(--teal)"></div>
-        <div class="kpi-label">最新收盘价</div>
+
+      <!-- 最新收盘价 -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal);opacity:.6"></div>
+        <div class="kpi-hdr">
+          <div class="kpi-label">最新收盘价</div>
+          <div class="info-wrap">
+            <div class="info-icon">i</div>
+            <div class="info-tip">
+              <div class="info-tip-title">最新收盘价</div>
+              <div class="info-tip-formula">P = 最近交易日收盘价</div>
+              <div class="info-tip-desc">Yahoo Finance 返回的最后一个有效交易日的收盘价。涨跌幅为相较前一交易日的变化百分比。</div>
+            </div>
+          </div>
+        </div>
         <div class="kpi-val" id="kpi-price" style="color:var(--teal)">--</div>
         <div class="kpi-sub" id="kpi-chg">--</div>
       </div>
+
+      <!-- 短期HV -->
       <div class="kpi">
-        <div class="kpi-label" id="kpi-hv20-lbl">短期HV (20日)</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--amber);opacity:.6"></div>
+        <div class="kpi-hdr">
+          <div class="kpi-label" id="kpi-hv20-lbl">短期HV (20日)</div>
+          <div class="info-wrap">
+            <div class="info-icon">i</div>
+            <div class="info-tip">
+              <div class="info-tip-title">历史波动率 HV</div>
+              <div class="info-tip-formula">σ = √( Σ(rᵢ - r̄)² / (N-1) × 252 ) × 100%<br>rᵢ = ln(Pᵢ / Pᵢ₋₁)</div>
+              <div class="info-tip-desc">取最近 N 个交易日的对数收益率，计算样本标准差后乘以 √252 年化，反映短期价格波动强度。</div>
+            </div>
+          </div>
+        </div>
         <div class="kpi-val" id="kpi-hv20" style="color:var(--amber)">--</div>
         <div class="kpi-sub">年化历史波动率</div>
       </div>
+
+      <!-- 中期HV -->
       <div class="kpi">
-        <div class="kpi-label">中期HV (60日)</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange);opacity:.6"></div>
+        <div class="kpi-hdr">
+          <div class="kpi-label">中期HV (60日)</div>
+          <div class="info-wrap">
+            <div class="info-icon">i</div>
+            <div class="info-tip">
+              <div class="info-tip-title">中期历史波动率</div>
+              <div class="info-tip-formula">σ₆₀ = √( Σ(rᵢ - r̄)² / 59 × 252 ) × 100%</div>
+              <div class="info-tip-desc">与短期HV口径相同，窗口固定为 60 个交易日（约3个月）。窗口更长，对短期噪音不敏感，反映中期趋势性波动水平。</div>
+            </div>
+          </div>
+        </div>
         <div class="kpi-val" id="kpi-hv60" style="color:var(--orange)">--</div>
         <div class="kpi-sub">年化历史波动率</div>
       </div>
+
+      <!-- Beta -->
       <div class="kpi">
-        <div class="kpi-label">Beta 系数</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:.6"></div>
+        <div class="kpi-hdr">
+          <div class="kpi-label">Beta 系数</div>
+          <div class="info-wrap">
+            <div class="info-icon">i</div>
+            <div class="info-tip">
+              <div class="info-tip-title">滚动 Beta 系数</div>
+              <div class="info-tip-formula">β = Cov(rₛ, rₘ) / Var(rₘ)<br>窗口：最近 60 个交易日</div>
+              <div class="info-tip-desc">衡量个股相对大盘的系统性风险。β&gt;1 表示涨跌幅大于大盘；β&lt;1 表示波动弱于大盘；β&lt;0 表示与大盘反向。基准：A股用上证综指，港股用恒生指数。</div>
+            </div>
+          </div>
+        </div>
         <div class="kpi-val" id="kpi-beta" style="color:var(--blue)">--</div>
-        <div class="kpi-sub" id="kpi-beta-sub">相对大盘</div>
+        <div class="kpi-sub" id="kpi-beta-sub">相对大盘 · 60日滚动</div>
       </div>
+
+      <!-- 分位数 -->
       <div class="kpi">
-        <div class="kpi-label">波动率分位数</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--purple);opacity:.6"></div>
+        <div class="kpi-hdr">
+          <div class="kpi-label">波动率分位数</div>
+          <div class="info-wrap">
+            <div class="info-icon">i</div>
+            <div class="info-tip">
+              <div class="info-tip-title">HV 历史分位数</div>
+              <div class="info-tip-formula">Pct = #{HVᵢ ≤ HV_now} / #{HV全序列} × 100%</div>
+              <div class="info-tip-desc">当前短期HV在整个历史HV序列中的百分位排名。分位越高表示当前波动率处于历史高位。分级：&lt;25% 低波动，25–50% 中等，50–75% 高波动，&gt;75% 极高。</div>
+            </div>
+          </div>
+        </div>
         <div class="kpi-val" id="kpi-pct" style="color:var(--purple)">--</div>
         <div class="kpi-sub" id="kpi-badge">--</div>
       </div>
+
     </div>
 
     <div class="chart-card fu">
@@ -240,10 +331,54 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
       <div class="risk-txt" id="risk-txt">--</div>
       <div class="risk-metrics" id="risk-metrics"></div>
     </div>
+
+    <!-- 指标计算口径说明 -->
+    <div id="method-box" class="fu">
+      <div class="method-title">
+        <span class="method-icon">∑</span>
+        指标计算口径 · METHODOLOGY
+      </div>
+      <div class="method-grid">
+        <div class="method-item">
+          <div class="method-name" style="color:var(--amber)">历史波动率 HV</div>
+          <div class="method-formula">σ = √( Σ(rᵢ - r̄)² / (n-1) × 252 ) × 100%</div>
+          <div class="method-desc">rᵢ = ln(Pᵢ/Pᵢ₋₁) 对数日收益率，滚动窗口计算，年化因子 252 个交易日</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--blue)">Beta 系数</div>
+          <div class="method-formula">β = Cov(rₛ, rₘ) / Var(rₘ)</div>
+          <div class="method-desc">60日滚动窗口，rₛ 为个股对数收益率，rₘ 为基准指数（A股：上证综指 000001.SS，港股：恒生指数 ^HSI）</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--purple)">波动率分位数</div>
+          <div class="method-formula">Pct = rank(HVₜ) / N × 100%</div>
+          <div class="method-desc">当前短期HV在全历史HV序列中的百分位排名，反映当前波动率的相对高低水平</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--teal)">风险等级划分</div>
+          <div class="method-formula">分位 &lt;25% / 25-50% / 50-75% / &gt;75%</div>
+          <div class="method-desc">低波动（绿）/ 中等波动（黄）/ 高波动（橙）/ 极高波动（红），基于历史分位数四分位划分</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--t2)">数据来源</div>
+          <div class="method-formula">Yahoo Finance API（日线收盘价）</div>
+          <div class="method-desc">前复权收盘价，剔除停牌/空值日期，仅含正常交易日数据。数据延迟约15-20分钟</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--t2)">免责声明</div>
+          <div class="method-formula">仅供学习与研究参考</div>
+          <div class="method-desc">本工具所展示数据及计算结果不构成任何投资建议，投资者需自行判断并承担相应风险</div>
+        </div>
+      </div>
+      <div class="method-footer">
+        <span>构建时间 · BUILD TIME：2026-03-11 00:00 CST</span>
+        <span>VOLTERM v9.1 · by Claude</span>
+      </div>
+    </div>
   </div>
 </div>
 
-<div id="footer">VOLTERM v9.0 · Yahoo Finance · 仅供参考</div>
+<div id="footer">VOLTERM v9.1 · Yahoo Finance · Build 2026-03-11 00:00 CST · 仅供参考</div>
 
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
