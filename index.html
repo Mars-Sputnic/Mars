@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOLTERM · 波动率终端</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #050810;
+  --card:  #0c1220;
+  --card2: #101828;
+  --b1:    #1a2744;
+  --b2:    #243560;
+  --teal:  #00d4aa;
+  --teal-a:rgba(0,212,170,0.12);
+  --green: #22c55e;
+  --red:   #ef4444;
+  --amber: #f59e0b;
+  --orange:#f97316;
+  --blue:  #3b82f6;
+  --purple:#a855f7;
+  --t1:    #e2e8f0;
+  --t2:    #94a3b8;
+  --t3:    #475569;
+  --mono:  'JetBrains Mono', monospace;
+  --sans:  'Noto Sans SC', sans-serif;
+  --disp:  'Bebas Neue', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+#hdr{position:sticky;top:0;z-index:100;background:rgba(5,8,16,.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--b1);padding:0 24px}
+#hdr-inner{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:14px;height:62px}
+.logo{font-family:var(--disp);font-size:26px;letter-spacing:3px;color:var(--teal);text-shadow:0 0 20px rgba(0,212,170,.3);white-space:nowrap;flex-shrink:0}
+.logo small{font-family:var(--mono);font-size:11px;color:var(--t3);letter-spacing:1px;margin-left:8px;font-weight:300}
+.search{display:flex;gap:8px;flex:1;max-width:420px}
+.search-wrap{flex:1;position:relative}
+.search-wrap::before{content:'〉';position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--teal);font-family:var(--mono);font-size:12px;pointer-events:none}
+#ticker-input{width:100%;background:var(--card);border:1px solid var(--b2);border-radius:6px;padding:8px 12px 8px 30px;color:var(--t1);font-family:var(--mono);font-size:13px;outline:none;transition:.2s}
+#ticker-input:focus{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-a)}
+.btn-analyze{background:var(--teal);color:#000;border:none;border-radius:6px;padding:8px 18px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;white-space:nowrap;transition:.2s}
+.btn-analyze:hover{background:#00ffc8;box-shadow:0 0 16px rgba(0,212,170,.4)}
+.win-wrap{display:flex;align-items:center;gap:6px}
+.win-wrap label{font-family:var(--mono);font-size:10px;color:var(--t3)}
+#win-select{background:var(--card);border:1px solid var(--b1);color:var(--t2);border-radius:4px;padding:4px 8px;font-family:var(--mono);font-size:11px;outline:none}
+.range-btns{display:flex;gap:4px;margin-left:auto}
+.rbtn{background:transparent;border:1px solid var(--b2);color:var(--t2);border-radius:4px;padding:5px 10px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:.15s}
+.rbtn.active,.rbtn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-a)}
+
+/* MAIN */
+#main{max-width:1500px;margin:0 auto;padding:18px 24px 48px;position:relative;z-index:1}
+
+/* LOADING */
+#loading{display:none;position:fixed;inset:0;background:rgba(5,8,16,.93);backdrop-filter:blur(10px);z-index:500;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#loading.show{display:flex}
+.spinner{width:52px;height:52px;border:2px solid var(--b2);border-top-color:var(--teal);border-radius:50%;animation:spin .75s linear infinite}
+.load-msg{font-family:var(--mono);font-size:13px;color:var(--teal);letter-spacing:2px;animation:pulse 1.4s ease-in-out infinite;text-align:center;max-width:320px}
+.load-src{font-family:var(--mono);font-size:11px;color:var(--t3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes blink{50%{opacity:0}}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fu{animation:fadeup .4s ease both}
+
+/* ERROR */
+#err-box{display:none;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:14px 20px;margin-bottom:16px;font-family:var(--mono);font-size:13px;color:var(--red);line-height:1.6}
+
+/* TICKER BAR */
+#ticker-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--b1);flex-wrap:wrap}
+.ticker-sym{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--teal);letter-spacing:2px}
+.ticker-sym .cur{animation:blink 1s step-end infinite}
+.ticker-name{font-size:14px;color:var(--t2);font-weight:300}
+.tag{font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--card);border:1px solid var(--b1);border-radius:3px;padding:2px 8px}
+.tag.yf{color:var(--teal);background:rgba(0,212,170,.06);border-color:rgba(0,212,170,.2)}
+#last-upd{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--t3)}
+
+/* KPI */
+#kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.6}
+.kpi-label{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1;margin-bottom:6px}
+.kpi-sub{font-family:var(--mono);font-size:11px;color:var(--t3)}
+.badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:3px;font-weight:600}
+
+/* CHARTS */
+.chart-card{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.chart-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.chart-title{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase}
+.chart-title::before{content:'';width:3px;height:13px;background:var(--teal);border-radius:2px;display:inline-block;flex-shrink:0}
+.chart-legend{display:flex;gap:14px}
+.leg{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;color:var(--t2)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+/* Fixed chart container heights - prevents Chart.js responsive stretching */
+.chart-wrap{position:relative;width:100%;overflow:hidden}
+.chart-wrap canvas{display:block !important;max-height:100% !important}
+.h260{height:260px}
+.h210{height:210px}
+.h185{height:185px}
+
+/* RISK */
+#risk-box{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:18px 24px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;margin-top:4px}
+.risk-en{font-family:var(--disp);font-size:44px;letter-spacing:2px;line-height:1}
+.risk-txt{font-size:13px;color:var(--t2);line-height:2}
+.risk-metrics{display:flex;flex-direction:column;gap:10px;text-align:right}
+.rm{font-family:var(--mono);font-size:12px;color:var(--t3)}
+.rm span{color:var(--t1);font-weight:600}
+
+/* EMPTY */
+#empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:440px;gap:18px}
+.empty-logo{font-family:var(--disp);font-size:80px;letter-spacing:6px;color:#0e1525}
+.empty-hint{font-family:var(--mono);font-size:13px;letter-spacing:2px;color:var(--t3)}
+.empty-sub{font-family:var(--mono);font-size:11px;color:#1a2d40}
+
+#footer{position:fixed;bottom:14px;right:18px;font-family:var(--mono);font-size:10px;color:var(--t3);opacity:.4}
+
+/* METHODOLOGY BOX */
+#method-box{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:20px 24px;margin-top:12px}
+.method-title{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--t2);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--b1)}
+.method-icon{width:24px;height:24px;background:var(--teal-a);border:1px solid rgba(0,212,170,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-size:13px;font-family:serif;flex-shrink:0}
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.method-item{background:var(--bg);border:1px solid var(--b1);border-radius:6px;padding:12px 14px}
+.method-name{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:1px;margin-bottom:6px}
+.method-formula{font-family:var(--mono);font-size:11px;color:var(--t1);background:rgba(255,255,255,.03);border-radius:3px;padding:4px 8px;margin-bottom:6px;letter-spacing:.5px}
+.method-desc{font-size:11px;color:var(--t3);line-height:1.6}
+.method-footer{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3);padding-top:12px;border-top:1px solid var(--b1)}
+@media(max-width:900px){.method-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.method-grid{grid-template-columns:1fr}}
+
+@media(max-width:900px){#kpi-grid{grid-template-columns:repeat(3,1fr)}.two-col{grid-template-columns:1fr}.range-btns{display:none}}
+/* METHODOLOGY */
+#methodology{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:14px 16px;margin-bottom:12px}
+.meth-hdr{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.meth-hdr:hover .chart-title{color:var(--teal)}
+.meth-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.meth-card{background:var(--card2,#0d1524);border:1px solid var(--b1);border-radius:6px;padding:14px}
+.meth-title{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:10px}
+.meth-formula{font-family:var(--mono);font-size:11px;color:var(--teal);background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.15);border-radius:4px;padding:6px 10px;margin-bottom:8px;line-height:1.7}
+.meth-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid rgba(26,39,68,.5);font-family:var(--mono);font-size:11px}
+.meth-row:last-child{border-bottom:none}
+.meth-k{color:var(--t3);white-space:nowrap;flex-shrink:0}
+.meth-v{color:var(--t2);text-align:right;word-break:break-all}
+@media(max-width:900px){.meth-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="load-msg" id="load-msg">LOADING...</div>
+  <div class="load-src" id="load-src">Yahoo Finance · 服务端代理</div>
+</div>
+
+<div id="hdr">
+  <div id="hdr-inner">
+    <div class="logo">VOLTERM<small>波动率终端</small></div>
+    <div class="search">
+      <div class="search-wrap">
+        <input id="ticker-input" type="text" placeholder="300476 / 600519 / 0700" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="btn-analyze" onclick="analyze()">ANALYZE</button>
+    </div>
+    <div class="win-wrap">
+      <label>HV窗口</label>
+      <select id="win-select">
+        <option value="10">10日</option>
+        <option value="20" selected>20日</option>
+        <option value="30">30日</option>
+      </select>
+    </div>
+    <div class="range-btns">
+      <button class="rbtn" onclick="setRange('3mo',this)">3M</button>
+      <button class="rbtn active" onclick="setRange('1y',this)">1Y</button>
+      <button class="rbtn" onclick="setRange('2y',this)">2Y</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="err-box"></div>
+
+  <div id="empty">
+    <div class="empty-logo">VOLTERM</div>
+    <div class="empty-hint">输入股票代码 → ANALYZE</div>
+    <div class="empty-sub">Yahoo Finance 真实数据 · A股 / 港股</div>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div id="ticker-bar">
+      <span class="ticker-sym" id="sym">--<span class="cur">_</span></span>
+      <span class="ticker-name" id="co-name"></span>
+      <span class="tag" id="exch-tag"></span>
+      <span class="tag yf">Yahoo Finance</span>
+      <span id="last-upd"></span>
+    </div>
+
+    <div id="kpi-grid">
+
+      <!-- 最新收盘价 -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal);opacity:.6"></div>
+        <div class="kpi-label">最新收盘价</div>
+          </div>
+        <div class="kpi-val" id="kpi-price" style="color:var(--teal)">--</div>
+        <div class="kpi-sub" id="kpi-chg">--</div>
+      </div>
+
+      <!-- 短期HV -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--amber);opacity:.6"></div>
+        <div class="kpi-label" id="kpi-hv20-lbl">短期HV (20日)</div>
+          </div>
+        <div class="kpi-val" id="kpi-hv20" style="color:var(--amber)">--</div>
+        <div class="kpi-sub">年化历史波动率</div>
+      </div>
+
+      <!-- 中期HV -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange);opacity:.6"></div>
+        <div class="kpi-label">中期HV (60日)</div>
+          </div>
+        <div class="kpi-val" id="kpi-hv60" style="color:var(--orange)">--</div>
+        <div class="kpi-sub">年化历史波动率</div>
+      </div>
+
+      <!-- Beta -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--blue);opacity:.6"></div>
+        <div class="kpi-label">Beta 系数</div>
+          </div>
+        <div class="kpi-val" id="kpi-beta" style="color:var(--blue)">--</div>
+        <div class="kpi-sub" id="kpi-beta-sub">相对大盘 · 60日滚动</div>
+      </div>
+
+      <!-- 分位数 -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--purple);opacity:.6"></div>
+        <div class="kpi-label">波动率分位数</div>
+          </div>
+        <div class="kpi-val" id="kpi-pct" style="color:var(--purple)">--</div>
+        <div class="kpi-sub" id="kpi-badge">--</div>
+      </div>
+
+      <!-- IV 估算 -->
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#e879f9;opacity:.6"></div>
+        <div class="kpi-label">IV 估算</div>
+        <div class="kpi-val" id="kpi-iv" style="color:#e879f9">--</div>
+        <div class="kpi-sub" id="kpi-iv-sub">隐含波动率近似</div>
+      </div>
+
+    </div>
+
+    <div class="chart-card fu">
+      <div class="chart-hdr">
+        <div class="chart-title">股价走势 · PRICE ACTION</div>
+        <div class="chart-legend">
+          <div class="leg"><div class="leg-dot" style="background:var(--teal)"></div>收盘价</div>
+          <div class="leg"><div class="leg-dot" style="background:rgba(0,212,170,.25)"></div>成交量</div>
+        </div>
+      </div>
+      <div class="chart-wrap h260"><canvas id="price-chart"></canvas></div>
+    </div>
+
+    <div class="chart-card fu">
+      <div class="chart-hdr">
+        <div class="chart-title">历史波动率 · HV SURFACE</div>
+        <div class="chart-legend">
+          <div class="leg"><div class="leg-dot" style="background:var(--amber)"></div><span id="hv20-leg">20日HV</span></div>
+          <div class="leg"><div class="leg-dot" style="background:var(--orange)"></div>60日HV</div>
+        </div>
+      </div>
+      <div class="chart-wrap h210"><canvas id="hv-chart"></canvas></div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card fu">
+        <div class="chart-hdr"><div class="chart-title">滚动 Beta · ROLLING BETA</div></div>
+        <div class="chart-wrap h185"><canvas id="beta-chart"></canvas></div>
+      </div>
+      <div class="chart-card fu">
+        <div class="chart-hdr"><div class="chart-title">波动率分布 · HV DISTRIBUTION</div></div>
+        <div class="chart-wrap h185"><canvas id="hist-chart"></canvas></div>
+      </div>
+    </div>
+
+
+    <!-- 计算口径说明 -->
+    <div id="methodology" class="fu" style="margin-top:12px">
+      <div class="meth-hdr" onclick="toggleMeth()">
+        <span class="chart-title" style="cursor:pointer">
+          ▾ <span id="meth-toggle-text">计算口径说明</span>
+        </span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">数据来源 · 计算逻辑 · 指标定义</span>
+      </div>
+      <div id="meth-body" style="display:block;margin-top:14px">
+        <div class="meth-grid">
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--teal)">📥 数据来源</div>
+            <div class="meth-row"><span class="meth-k">行情数据</span><span class="meth-v">Yahoo Finance v8 API</span></div>
+            <div class="meth-row"><span class="meth-k">接口</span><span class="meth-v">query1.finance.yahoo.com/v8/finance/chart</span></div>
+            <div class="meth-row"><span class="meth-k">频率</span><span class="meth-v">日线（interval=1d）</span></div>
+            <div class="meth-row"><span class="meth-k">价格</span><span class="meth-v">前复权收盘价（adjusted close）</span></div>
+            <div class="meth-row"><span class="meth-k">A股基准</span><span class="meth-v">上证综指 000001.SS</span></div>
+            <div class="meth-row"><span class="meth-k">港股基准</span><span class="meth-v">恒生指数 ^HSI</span></div>
+            <div class="meth-row"><span class="meth-k">代理</span><span class="meth-v">Vercel 服务端转发（无 CORS 限制）</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--amber)">📐 历史波动率 HV</div>
+            <div class="meth-formula">rᵢ = ln(Pᵢ / Pᵢ₋₁)</div>
+            <div class="meth-formula">σ = √[ Σ(rᵢ − r̄)² / (N−1) ] × √252 × 100%</div>
+            <div class="meth-row"><span class="meth-k">收益率</span><span class="meth-v">对数收益率（Log Return）</span></div>
+            <div class="meth-row"><span class="meth-k">标准差</span><span class="meth-v">样本标准差（除以 N−1）</span></div>
+            <div class="meth-row"><span class="meth-k">年化因子</span><span class="meth-v">√252（A股交易日约252天）</span></div>
+            <div class="meth-row"><span class="meth-k">短期窗口</span><span class="meth-v">可选 10 / 20 / 30 交易日</span></div>
+            <div class="meth-row"><span class="meth-k">中期窗口</span><span class="meth-v">固定 60 交易日（约3个月）</span></div>
+            <div class="meth-row"><span class="meth-k">计算方式</span><span class="meth-v">滚动窗口，逐日更新</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--blue)">📊 Beta 系数</div>
+            <div class="meth-formula">β = Cov(rₛ, rₘ) / Var(rₘ)</div>
+            <div class="meth-row"><span class="meth-k">窗口</span><span class="meth-v">滚动 60 交易日</span></div>
+            <div class="meth-row"><span class="meth-k">rₛ</span><span class="meth-v">个股日对数收益率</span></div>
+            <div class="meth-row"><span class="meth-k">rₘ</span><span class="meth-v">基准指数日对数收益率</span></div>
+            <div class="meth-row"><span class="meth-k">β &gt; 1</span><span class="meth-v">波动幅度大于大盘</span></div>
+            <div class="meth-row"><span class="meth-k">β = 1</span><span class="meth-v">与大盘同步</span></div>
+            <div class="meth-row"><span class="meth-k">β &lt; 0</span><span class="meth-v">与大盘反向运动</span></div>
+            <div class="meth-row"><span class="meth-k">数据不足</span><span class="meth-v">历史 &lt; 60 日时显示 N/A</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--purple)">📈 波动率分位数</div>
+            <div class="meth-formula">Pct = #{HVᵢ ≤ HV_now} / #{全序列} × 100%</div>
+            <div class="meth-row"><span class="meth-k">基准序列</span><span class="meth-v">所选时间范围内全部短期HV值</span></div>
+            <div class="meth-row"><span class="meth-k">含义</span><span class="meth-v">当前HV在历史中所处百分位</span></div>
+            <div class="meth-row"><span class="meth-k">&lt; 25%</span><span class="meth-v" style="color:#22c55e">低波动</span></div>
+            <div class="meth-row"><span class="meth-k">25–50%</span><span class="meth-v" style="color:#f59e0b">中等波动</span></div>
+            <div class="meth-row"><span class="meth-k">50–75%</span><span class="meth-v" style="color:#f97316">高波动</span></div>
+            <div class="meth-row"><span class="meth-k">&gt; 75%</span><span class="meth-v" style="color:#ef4444">极高波动</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--orange)">📉 HV 分布直方图</div>
+            <div class="meth-row"><span class="meth-k">数据</span><span class="meth-v">全时间范围内所有短期HV值</span></div>
+            <div class="meth-row"><span class="meth-k">分箱数</span><span class="meth-v">16 个等宽区间</span></div>
+            <div class="meth-row"><span class="meth-k">颜色</span><span class="meth-v">对应波动率分位区间着色</span></div>
+            <div class="meth-row"><span class="meth-k">用途</span><span class="meth-v">直观展示波动率分布形态</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:#e879f9">🔮 IV 隐含波动率估算</div>
+            <div class="meth-formula">IV ≈ HV × (1 + VRP)</div>
+            <div class="meth-row"><span class="meth-k">VRP</span><span class="meth-v">波动率风险溢价（Volatility Risk Premium）</span></div>
+            <div class="meth-row"><span class="meth-k">VRP 范围</span><span class="meth-v">10%~35%，随历史分位数动态调整</span></div>
+            <div class="meth-row"><span class="meth-k">逻辑</span><span class="meth-v">市场对未来波动率定价通常高于历史实现值，高分位时溢价更大</span></div>
+            <div class="meth-row"><span class="meth-k">局限性</span><span class="meth-v">A股/港股无公开期权链数据，无法计算真实 IV，此为近似估算</span></div>
+            <div class="meth-row"><span class="meth-k">参考</span><span class="meth-v">真实 IV 需通过期权隐含价格用 Black-Scholes 反推</span></div>
+          </div>
+
+          <div class="meth-card">
+            <div class="meth-title" style="color:var(--t2)">⚠️ 免责声明</div>
+            <div class="meth-row"><span class="meth-k">数据延迟</span><span class="meth-v">Yahoo Finance 非实时，通常延迟15分钟</span></div>
+            <div class="meth-row"><span class="meth-k">用途</span><span class="meth-v">仅供学习研究，不构成投资建议</span></div>
+            <div class="meth-row"><span class="meth-k">版本</span><span class="meth-v">VOLTERM v9.1</span></div>
+            <div class="meth-row"><span class="meth-k">生成时间</span><span class="meth-v">2026-03-10 16:01</span></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div id="risk-box" class="fu">
+      <div class="risk-en" id="risk-en">--</div>
+      <div class="risk-txt" id="risk-txt">--</div>
+      <div class="risk-metrics" id="risk-metrics"></div>
+    </div>
+
+    <!-- 指标计算口径说明 -->
+    <div id="method-box" class="fu">
+      <div class="method-title">
+        <span class="method-icon">∑</span>
+        指标计算口径 · METHODOLOGY
+      </div>
+      <div class="method-grid">
+        <div class="method-item">
+          <div class="method-name" style="color:var(--amber)">历史波动率 HV</div>
+          <div class="method-formula">σ = √( Σ(rᵢ - r̄)² / (n-1) × 252 ) × 100%</div>
+          <div class="method-desc">rᵢ = ln(Pᵢ/Pᵢ₋₁) 对数日收益率，滚动窗口计算，年化因子 252 个交易日</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--blue)">Beta 系数</div>
+          <div class="method-formula">β = Cov(rₛ, rₘ) / Var(rₘ)</div>
+          <div class="method-desc">60日滚动窗口，rₛ 为个股对数收益率，rₘ 为基准指数（A股：上证综指 000001.SS，港股：恒生指数 ^HSI）</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--purple)">波动率分位数</div>
+          <div class="method-formula">Pct = rank(HVₜ) / N × 100%</div>
+          <div class="method-desc">当前短期HV在全历史HV序列中的百分位排名，反映当前波动率的相对高低水平</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--teal)">风险等级划分</div>
+          <div class="method-formula">分位 &lt;25% / 25-50% / 50-75% / &gt;75%</div>
+          <div class="method-desc">低波动（绿）/ 中等波动（黄）/ 高波动（橙）/ 极高波动（红），基于历史分位数四分位划分</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:#e879f9">IV 隐含波动率估算</div>
+          <div class="method-formula">IV ≈ HV_短期 × (1 + VRP)，VRP ∈ [10%, 35%]</div>
+          <div class="method-desc">A股/港股无公开期权链，无法直接获取真实 IV。本工具采用 HV × 波动率风险溢价近似：低分位时 VRP≈10%，极高分位时 VRP≈35%，动态调整。真实 IV 需通过 Black-Scholes 模型对期权价格反推。</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--t2)">数据来源</div>
+          <div class="method-formula">Yahoo Finance API（日线收盘价）</div>
+          <div class="method-desc">前复权收盘价，剔除停牌/空值日期，仅含正常交易日数据。数据延迟约15-20分钟</div>
+        </div>
+        <div class="method-item">
+          <div class="method-name" style="color:var(--t2)">免责声明</div>
+          <div class="method-formula">仅供学习与研究参考</div>
+          <div class="method-desc">本工具所展示数据及计算结果不构成任何投资建议，投资者需自行判断并承担相应风险</div>
+        </div>
+      </div>
+      <div class="method-footer">
+        <span>构建时间 · BUILD TIME：2026-03-11 00:00 CST</span>
+        <span>VOLTERM v9.1 · by Claude</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="footer">VOLTERM v9.1 · Yahoo Finance · 生成于 2026-03-10 16:01 · 仅供参考</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+let currentRange = '1y';
+const charts = {};
+
+Chart.defaults.color = '#475569';
+// Prevent Chart.js from responding to scroll-triggered resize events
+Chart.defaults.animation = { duration: 400 };
+Chart.defaults.resizeDelay = 100;
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// ── Ticker helpers ────────────────────────────────────────────────────────────
+function toYahoo(raw) {
+  raw = raw.trim().toUpperCase().replace(/\.(SS|SZ|SH|HK)$/i, '');
+  if (/^[6]\d{5}$/.test(raw)) return raw + '.SS';
+  if (/^[013]\d{5}$/.test(raw)) return raw + '.SZ';
+  if (/^\d{1,5}$/.test(raw))   return raw.replace(/^0+/,'').padStart(4,'0') + '.HK';
+  return raw;
+}
+function toBench(t) { return t.endsWith('.HK') ? '%5EHSI' : '000001.SS'; }
+function toExch(t) {
+  if (t.endsWith('.HK')) return 'HKEX · 港交所';
+  if (t.endsWith('.SS')) return 'SSE · 上交所';
+  if (t.endsWith('.SZ')) return 'SZSE · 深交所';
+  return '';
+}
+
+// ── Fetch via Vercel serverless proxy ────────────────────────────────────────
+async function fetchChart(ticker, range) {
+  setLoadMsg(`拉取 ${ticker}...`, 'Yahoo Finance · 服务端代理');
+  const url = `/api/proxy?ticker=${encodeURIComponent(ticker)}&range=${range}`;
+  const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!r.ok) throw new Error(`数据获取失败 (${r.status})`);
+  const json = await r.json();
+  if (json.error) throw new Error(json.error);
+  const result = json?.chart?.result?.[0];
+  if (!result?.timestamp?.length) throw new Error(`${ticker} 暂无数据，请检查代码是否正确`);
+  return result;
+}
+
+function parseResult(r) {
+  const ts = r.timestamp || [];
+  const q = r.indicators?.quote?.[0] || {};
+  const closes = q.close || [], vols = q.volume || [];
+  const dates = [], cls = [], vs = [];
+  for (let i = 0; i < ts.length; i++) {
+    if (closes[i] == null) continue;
+    dates.push(new Date(ts[i]*1000).toISOString().slice(0,10));
+    cls.push(+closes[i].toFixed(4));
+    vs.push(vols[i] || 0);
+  }
+  return { dates, closes: cls, volumes: vs, meta: r.meta || {} };
+}
+
+// ── Math ──────────────────────────────────────────────────────────────────────
+function logRet(p) { return p.slice(1).map((v,i) => Math.log(v/p[i])); }
+
+function calcHV(ret, w) {
+  const out = new Array(w).fill(null);
+  for (let i = w; i <= ret.length; i++) {
+    const sl = ret.slice(i-w, i), m = sl.reduce((a,b)=>a+b,0)/w;
+    out.push(+(Math.sqrt(sl.reduce((s,r)=>s+(r-m)**2,0)/(w-1)*252)*100).toFixed(2));
+  }
+  return out;
+}
+
+function calcBeta(sr, mr, w=60) {
+  const n = Math.min(sr.length, mr.length), out = new Array(w).fill(null);
+  for (let i = w; i <= n; i++) {
+    const s = sr.slice(i-w,i), m = mr.slice(i-w,i);
+    const sm = s.reduce((a,b)=>a+b,0)/w, mm = m.reduce((a,b)=>a+b,0)/w;
+    const cov = s.reduce((a,r,j)=>a+(r-sm)*(m[j]-mm),0)/(w-1);
+    const vm  = m.reduce((a,r)=>a+(r-mm)**2,0)/(w-1);
+    out.push(vm ? +(cov/vm).toFixed(3) : null);
+  }
+  return out;
+}
+
+function calcPct(arr) {
+  const v = arr.filter(Boolean); if (!v.length) return 0;
+  const c = v[v.length-1];
+  return +((v.filter(x=>x<=c).length/v.length*100).toFixed(1));
+}
+
+function riskInfo(p) {
+  if (p < 25) return { label:'低波动',  color:'#22c55e', en:'LOW VOL'  };
+  if (p < 50) return { label:'中等波动', color:'#f59e0b', en:'MED VOL'  };
+  if (p < 75) return { label:'高波动',  color:'#f97316', en:'HIGH VOL' };
+  return             { label:'极高波动', color:'#ef4444', en:'EXTREME'  };
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setLoadMsg(msg, sub) {
+  document.getElementById('load-msg').textContent = msg;
+  if (sub) document.getElementById('load-src').textContent = sub;
+}
+function showLoading(v) {
+  document.getElementById('loading').classList.toggle('show', v);
+}
+function showErr(msg) {
+  const el = document.getElementById('err-box');
+  el.style.display = msg ? 'block' : 'none';
+  el.innerHTML = msg ? `⚠ ${msg.replace(/\n/g,'<br>')}` : '';
+}
+function setRange(r, el) {
+  currentRange = r;
+  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+const GRID = 'rgba(26,39,68,.8)', TICK = '#475569';
+
+// ── Custom external tooltip ────────────────────────────────────────────────
+function getOrCreateTooltip(chart) {
+  let t = chart.canvas.parentNode.querySelector('.ct');
+  if (!t) {
+    t = document.createElement('div');
+    t.className = 'ct';
+    t.style.cssText = 'position:absolute;pointer-events:none;z-index:200;background:rgba(6,10,20,.97);border:1px solid #1a2744;border-radius:6px;padding:9px 13px;font-family:JetBrains Mono,monospace;font-size:11px;min-width:140px;box-shadow:0 4px 20px rgba(0,0,0,.5);transition:opacity .12s';
+    chart.canvas.parentNode.style.position = 'relative';
+    chart.canvas.parentNode.appendChild(t);
+  }
+  return t;
+}
+
+function externalTooltip(context) {
+  const { chart, tooltip } = context;
+  const el = getOrCreateTooltip(chart);
+  if (tooltip.opacity === 0) { el.style.opacity = '0'; return; }
+
+  // Title (date)
+  const title = tooltip.title?.[0] || '';
+  // Body lines
+  const lines = (tooltip.dataPoints || [])
+    .filter(p => p.raw != null)
+    .map(p => {
+      const ds = p.dataset;
+      const color = ds.borderColor || ds.backgroundColor || '#00d4aa';
+      const val = typeof p.raw === 'number'
+        ? (Math.abs(p.raw) < 10 ? p.raw.toFixed(3) : p.raw.toFixed(2))
+        : p.raw;
+      const suffix = ds._suffix || '';
+      const label = ds.label || '';
+      return `<div style="display:flex;align-items:center;gap:7px;margin-top:4px">
+        <span style="width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0"></span>
+        <span style="color:#94a3b8">${label}</span>
+        <span style="color:#e2e8f0;margin-left:auto;padding-left:12px;font-weight:600">${val}${suffix}</span>
+      </div>`;
+    }).join('');
+
+  el.innerHTML = `<div style="color:#475569;font-size:10px;letter-spacing:.5px;margin-bottom:2px">${title}</div>${lines}`;
+  el.style.opacity = '1';
+
+  // Position
+  const { offsetLeft: x, offsetTop: y } = chart.canvas;
+  let left = x + tooltip.caretX + 12;
+  let top  = y + tooltip.caretY - el.offsetHeight / 2;
+  // Keep in bounds
+  const cw = chart.canvas.parentNode.offsetWidth;
+  if (left + 160 > cw) left = x + tooltip.caretX - 160;
+  el.style.left = left + 'px';
+  el.style.top  = Math.max(0, top) + 'px';
+}
+
+const ttBase = { enabled:false, external:externalTooltip };
+
+// ── Main analyze ──────────────────────────────────────────────────────────────
+async function analyze() {
+  const raw = document.getElementById('ticker-input').value.trim();
+  if (!raw) return;
+  const win = +document.getElementById('win-select').value;
+  const ticker = toYahoo(raw);
+
+  showLoading(true); showErr('');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('empty').style.display = 'none';
+
+  try {
+    setLoadMsg(`拉取 ${ticker} 行情...`);
+    const stockRaw = await fetchChart(ticker, currentRange);
+    const stock = parseResult(stockRaw);
+    if (stock.closes.length < 10) throw new Error('数据点不足，请换更长时间范围');
+
+    setLoadMsg('拉取基准指数...');
+    let mCloses = [];
+    try {
+      const mRaw = await fetchChart(toBench(ticker), currentRange);
+      mCloses = parseResult(mRaw).closes;
+    } catch(_) {}
+
+    setLoadMsg('计算波动率...');
+    const sr = logRet(stock.closes), mr = mCloses.length > 1 ? logRet(mCloses) : [];
+    const hv20 = calcHV(sr, win), hv60 = calcHV(sr, 60);
+    const betaArr = mr.length >= 60 ? calcBeta(sr, mr.slice(-sr.length), 60) : new Array(sr.length+1).fill(null);
+
+    const v20 = hv20.filter(Boolean), v60 = hv60.filter(Boolean);
+    const curHV20 = v20.at(-1), curHV60 = v60.at(-1);
+    const curBeta = betaArr.filter(Boolean).at(-1) ?? null;
+    const pct = calcPct(v20), risk = riskInfo(pct);
+
+    // IV 估算：基于 HV + 波动率风险溢价（VRP）模型
+    // 市场通常对波动率定价存在溢价，IV ≈ HV × (1 + VRP)
+    // VRP 根据历史分位数动态调整：低分位溢价小，高分位溢价大
+    function calcIV(hv, pctile) {
+      if (!hv) return null;
+      const vrp = 0.10 + (pctile / 100) * 0.25; // VRP range: 10%~35%
+      return +(hv * (1 + vrp)).toFixed(2);
+    }
+    const curIV = calcIV(curHV20, pct);
+    const last = stock.closes.at(-1), prev = stock.closes.at(-2) ?? last;
+    const chg = ((last-prev)/prev*100).toFixed(2);
+
+    const labels = stock.dates.map(d => d.slice(5));
+
+    // ── Update header ──────────────────────────────────────────────────────────
+    document.getElementById('sym').innerHTML = ticker + '<span class="cur">_</span>';
+    document.getElementById('co-name').textContent = stock.meta.longName || stock.meta.shortName || '';
+    document.getElementById('exch-tag').textContent = toExch(ticker);
+    document.getElementById('last-upd').textContent = '更新: ' + new Date().toLocaleString('zh-CN');
+
+    // ── KPIs ───────────────────────────────────────────────────────────────────
+    document.getElementById('kpi-price').textContent = last > 100 ? last.toFixed(2) : last.toFixed(3);
+    const chgEl = document.getElementById('kpi-chg');
+    chgEl.textContent = (+chg>=0?'+':'') + chg + '%';
+    chgEl.style.color = +chg >= 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('kpi-hv20-lbl').textContent = `短期HV (${win}日)`;
+    document.getElementById('kpi-hv20').textContent = curHV20 ? curHV20 + '%' : '--';
+    document.getElementById('kpi-hv60').textContent = curHV60 ? curHV60 + '%' : '不足60日';
+    document.getElementById('kpi-beta').textContent = curBeta ? curBeta : 'N/A';
+    document.getElementById('kpi-beta-sub').textContent = curBeta ? (Math.abs(curBeta)>1.2?'高相关':'中性相关') : '需60日+';
+    document.getElementById('kpi-pct').textContent = pct + '%';
+    document.getElementById('kpi-iv').textContent = curIV ? curIV + '%' : '--';
+    document.getElementById('kpi-iv-sub').textContent = curIV
+      ? `HV×(1+VRP)  VRP≈${((curIV/curHV20-1)*100).toFixed(0)}%`
+      : '需要HV数据';
+    document.getElementById('kpi-badge').innerHTML =
+      `<span class="badge" style="background:${risk.color}22;color:${risk.color}">${risk.label}</span>`;
+    document.getElementById('hv20-leg').textContent = `${win}日HV`;
+
+    // ── Price chart ────────────────────────────────────────────────────────────
+    destroyChart('price');
+    const pCtx = document.getElementById('price-chart').getContext('2d');
+    const pGrad = pCtx.createLinearGradient(0,0,0,260);
+    pGrad.addColorStop(0,'rgba(0,212,170,.25)'); pGrad.addColorStop(1,'rgba(0,212,170,0)');
+    charts.price = new Chart(pCtx, {
+      data: {
+        labels,
+        datasets: [
+          { type:'line', label:'收盘价', data:stock.closes, borderColor:'#00d4aa', backgroundColor:pGrad,
+            borderWidth:1.5, pointRadius:0, fill:true, tension:.3, yAxisID:'y', _suffix:'' },
+          { type:'bar', label:'成交量(M)', data:stock.volumes.map(v=>v/1e6),
+            backgroundColor:'rgba(0,212,170,.12)', borderWidth:0, yAxisID:'y2', _suffix:'M' },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ intersect:false, mode:'index' },
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{
+          x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:8,maxRotation:0} },
+          y:{ grid:{color:GRID}, ticks:{color:TICK}, position:'left' },
+          y2:{ grid:{display:false}, ticks:{display:false}, position:'right', max: Math.max(...stock.volumes)/1e6*5 },
+        }
+      }
+    });
+
+    // ── HV chart ───────────────────────────────────────────────────────────────
+    destroyChart('hv');
+    charts.hv = new Chart(document.getElementById('hv-chart'), {
+      type:'line',
+      data:{ labels, datasets:[
+        { label:`${win}日HV`, data:hv20, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.08)',
+          borderWidth:1.5, pointRadius:0, fill:true, tension:.4, spanGaps:false, _suffix:'%' },
+        { label:'60日HV', data:hv60, borderColor:'#f97316', borderWidth:1.5, pointRadius:0,
+          fill:false, tension:.4, borderDash:[5,3], spanGaps:false, _suffix:'%' },
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ intersect:false, mode:'index' },
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{
+          x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:8,maxRotation:0} },
+          y:{ grid:{color:GRID}, ticks:{color:TICK, callback:v=>v.toFixed(1)+'%'} },
+        }
+      }
+    });
+
+    // ── Beta chart ─────────────────────────────────────────────────────────────
+    destroyChart('beta');
+    charts.beta = new Chart(document.getElementById('beta-chart'), {
+      type:'line',
+      data:{ labels, datasets:[
+        { label:'Beta', data:betaArr, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.08)',
+          borderWidth:1.5, pointRadius:0, fill:true, tension:.4, spanGaps:false, _suffix:'' },
+        { label:'', data:new Array(labels.length).fill(1),
+          borderColor:'rgba(71,85,105,.5)', borderWidth:1, borderDash:[4,4], pointRadius:0 },
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ intersect:false, mode:'index' },
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{
+          x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:0} },
+          y:{ grid:{color:GRID}, ticks:{color:TICK,callback:v=>v.toFixed(1)} },
+        }
+      }
+    });
+
+    // ── Histogram ──────────────────────────────────────────────────────────────
+    destroyChart('hist');
+    const mn = Math.min(...v20), mx = Math.max(...v20), bw = (mx-mn)/16||1;
+    const hBins = Array.from({length:16},(_,i)=>{
+      const lo = mn+i*bw;
+      return { x: lo.toFixed(1)+'%', y: v20.filter(v=>v>=lo&&v<lo+bw).length, p:i/16 };
+    });
+    charts.hist = new Chart(document.getElementById('hist-chart'), {
+      type:'bar',
+      data:{ labels:hBins.map(b=>b.x), datasets:[{ label:'频次', data:hBins.map(b=>b.y),
+        backgroundColor:hBins.map(b=>b.p<.25?'rgba(34,197,94,.7)':b.p<.5?'rgba(245,158,11,.7)':b.p<.75?'rgba(249,115,22,.7)':'rgba(239,68,68,.7)'),
+        borderRadius:2 }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{
+          x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:30} },
+          y:{ grid:{color:GRID}, ticks:{color:TICK} },
+        }
+      }
+    });
+
+    // ── Risk summary ───────────────────────────────────────────────────────────
+    document.getElementById('risk-en').textContent  = risk.en;
+    document.getElementById('risk-en').style.color  = risk.color;
+    document.getElementById('risk-txt').innerHTML   =
+      `<strong style="color:#e2e8f0">${ticker}</strong> 当前${win}日年化波动率 ` +
+      `<strong style="color:${risk.color}">${curHV20}%</strong>，` +
+      `历史分位 <strong style="color:#a855f7">${pct}%</strong>，` +
+      `属于<strong style="color:${risk.color}">${risk.label}</strong>。<br>` +
+      (curHV20>(curHV60||0)?'短期波动高于中期，近期波动有所扩大。':'短期波动低于中期，市场趋于平稳。') +
+      (curBeta ? ` Beta ${curBeta}，${Math.abs(curBeta)>1.2?'与大盘有放大效应':'与大盘走势基本一致'}。` : '');
+    document.getElementById('risk-metrics').innerHTML =
+      [['HV比值(短/长)', curHV60?(curHV20/curHV60).toFixed(2):'--'],['历史分位',pct+'%'],['数据点',stock.closes.length+'日']]
+      .map(([k,v])=>`<div class="rm">${k} <span>${v}</span></div>`).join('');
+
+    document.getElementById('dashboard').style.display = 'block';
+  } catch(e) {
+    showErr(e.message);
+    document.getElementById('empty').style.display = 'flex';
+  } finally {
+    showLoading(false);
+  }
+}
+
+
+function toggleMeth() {
+  const body = document.getElementById('meth-body');
+  const txt  = document.getElementById('meth-toggle-text');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  txt.textContent = open ? '收起计算口径说明 ▴' : '展开计算口径说明 ▸';
+}
+
+// Enter key
+document.getElementById('ticker-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
