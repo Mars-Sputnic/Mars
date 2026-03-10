@@ -230,8 +230,25 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
         <div class="chart-wrap h185"><canvas id="beta-chart"></canvas></div>
       </div>
       <div class="chart-card fu">
-        <div class="chart-hdr"><div class="chart-title">波动率分布 · HV DISTRIBUTION</div></div>
+        <div class="chart-hdr">
+          <div class="chart-title">短期HV分布 · SHORT-TERM HV DIST</div>
+          <div class="chart-legend"><div class="leg"><div class="leg-dot" style="background:var(--amber)"></div><span id="hist-short-leg">20日HV</span></div></div>
+        </div>
         <div class="chart-wrap h185"><canvas id="hist-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card fu">
+        <div class="chart-hdr">
+          <div class="chart-title">中期HV分布 · MID-TERM HV DIST</div>
+          <div class="chart-legend"><div class="leg"><div class="leg-dot" style="background:var(--orange)"></div>60日HV</div></div>
+        </div>
+        <div class="chart-wrap h185"><canvas id="hist60-chart"></canvas></div>
+      </div>
+      <div class="chart-card fu">
+        <div class="chart-hdr"><div class="chart-title">短期 vs 中期 · HV COMPARISON</div></div>
+        <div class="chart-wrap h185"><canvas id="hist-cmp-chart"></canvas></div>
       </div>
     </div>
 
@@ -543,26 +560,67 @@ async function analyze() {
       }
     });
 
-    // ── Histogram ──────────────────────────────────────────────────────────────
+    // ── 短期HV分布 ─────────────────────────────────────────────────────────────
+    document.getElementById('hist-short-leg').textContent = `${win}日HV`;
     destroyChart('hist');
-    const mn = Math.min(...v20), mx = Math.max(...v20), bw = (mx-mn)/16||1;
-    const hBins = Array.from({length:16},(_,i)=>{
-      const lo = mn+i*bw;
-      return { x: lo.toFixed(1)+'%', y: v20.filter(v=>v>=lo&&v<lo+bw).length, p:i/16 };
-    });
+    function makeBins(arr, color1, color2, color3, color4) {
+      const valid = arr.filter(Boolean);
+      if (!valid.length) return { labels:[], data:[], colors:[] };
+      const mn = Math.min(...valid), mx = Math.max(...valid), bw = (mx-mn)/16||1;
+      const bins = Array.from({length:16},(_,i)=>{
+        const lo = mn+i*bw, p = i/16;
+        return { x: lo.toFixed(1)+'%', y: valid.filter(v=>v>=lo&&v<lo+bw).length,
+          bg: p<.25?color1:p<.5?color2:p<.75?color3:color4 };
+      });
+      return { labels:bins.map(b=>b.x), data:bins.map(b=>b.y), colors:bins.map(b=>b.bg) };
+    }
+    const sh = makeBins(v20,'rgba(34,197,94,.7)','rgba(245,158,11,.7)','rgba(249,115,22,.7)','rgba(239,68,68,.7)');
     charts.hist = new Chart(document.getElementById('hist-chart'), {
       type:'bar',
-      data:{ labels:hBins.map(b=>b.x), datasets:[{ label:'频次', data:hBins.map(b=>b.y),
-        backgroundColor:hBins.map(b=>b.p<.25?'rgba(34,197,94,.7)':b.p<.5?'rgba(245,158,11,.7)':b.p<.75?'rgba(249,115,22,.7)':'rgba(239,68,68,.7)'),
-        borderRadius:2 }]
+      data:{ labels:sh.labels, datasets:[{ label:`${win}日HV频次`, data:sh.data,
+        backgroundColor:sh.colors, borderRadius:2, _suffix:' 天' }]
       },
-      options:{
-        responsive:true, maintainAspectRatio:false,
+      options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{display:false}, tooltip:ttBase },
-        scales:{
-          x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:30} },
-          y:{ grid:{color:GRID}, ticks:{color:TICK} },
-        }
+        scales:{ x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:30} },
+                 y:{ grid:{color:GRID}, ticks:{color:TICK} } }
+      }
+    });
+
+    // ── 中期HV分布 ─────────────────────────────────────────────────────────────
+    destroyChart('hist60');
+    const mh = makeBins(v60,'rgba(34,197,94,.6)','rgba(245,158,11,.6)','rgba(249,115,22,.6)','rgba(239,68,68,.6)');
+    charts.hist60 = new Chart(document.getElementById('hist60-chart'), {
+      type:'bar',
+      data:{ labels:mh.labels, datasets:[{ label:'60日HV频次', data:mh.data,
+        backgroundColor:mh.colors, borderRadius:2, _suffix:' 天' }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{ x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:30} },
+                 y:{ grid:{color:GRID}, ticks:{color:TICK} } }
+      }
+    });
+
+    // ── 短期 vs 中期对比折线 ────────────────────────────────────────────────────
+    destroyChart('hist-cmp');
+    // 用统一区间对比两者分布形态
+    const allVals = [...v20, ...v60].filter(Boolean);
+    const cMin = Math.min(...allVals), cMax = Math.max(...allVals), cBw = (cMax-cMin)/16||1;
+    const cLabels = Array.from({length:16},(_,i)=>( cMin+i*cBw).toFixed(1)+'%');
+    const cD20 = Array.from({length:16},(_,i)=>{ const lo=cMin+i*cBw; return v20.filter(Boolean).filter(v=>v>=lo&&v<lo+cBw).length; });
+    const cD60 = Array.from({length:16},(_,i)=>{ const lo=cMin+i*cBw; return v60.filter(Boolean).filter(v=>v>=lo&&v<lo+cBw).length; });
+    charts['hist-cmp'] = new Chart(document.getElementById('hist-cmp-chart'), {
+      type:'bar',
+      data:{ labels:cLabels, datasets:[
+        { label:`${win}日HV`, data:cD20, backgroundColor:'rgba(245,158,11,.55)', borderRadius:2, _suffix:' 天' },
+        { label:'60日HV',    data:cD60, backgroundColor:'rgba(249,115,22,.45)', borderRadius:2, _suffix:' 天' },
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        interaction:{ intersect:false, mode:'index' },
+        plugins:{ legend:{display:false}, tooltip:ttBase },
+        scales:{ x:{ grid:{color:GRID}, ticks:{color:TICK,maxTicksLimit:6,maxRotation:30} },
+                 y:{ grid:{color:GRID}, ticks:{color:TICK} } }
       }
     });
 
