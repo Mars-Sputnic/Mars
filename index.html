@@ -279,7 +279,11 @@ function toYahoo(raw) {
   raw = raw.trim().toUpperCase().replace(/\.(SS|SZ|SH|HK)$/i, '');
   if (/^[6]\d{5}$/.test(raw)) return raw + '.SS';
   if (/^[013]\d{5}$/.test(raw)) return raw + '.SZ';
-  if (/^\d{1,5}$/.test(raw))   return raw.replace(/^0+/,'').padStart(4,'0') + '.HK';
+  if (/^\d{1,5}$/.test(raw)) {
+    const n = raw.replace(/^0+/, '') || '0';
+    // Yahoo Finance: 港股4位及以下补零到4位，5位直接用（如9988, 06862→6862不存在用原始）
+    return (n.length <= 4 ? n.padStart(4,'0') : n) + '.HK';
+  }
   return raw;
 }
 function toBench(t) { return t.endsWith('.HK') ? '%5EHSI' : '000001.SS'; }
